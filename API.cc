@@ -93,6 +93,12 @@ Response API::dropTable(const std::string &tableName) {
     //       if yes then use catalog manager clean the table information file
     //second, use record manager to clean the data file of the table.
     //==========================================
+    if(!cm.hasTable(tableName + ".table"))
+        return Response("This table does nojt exist");
+
+    cm.dropTable(tableName);
+
+    rm.RecordManagerTableDelete(tableName);
 }
 
 //select statement
