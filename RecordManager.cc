@@ -117,6 +117,19 @@ void RecordManager::RecordManagerRecordInsert(std::string dbName, const std::vec
         // remember to use buffer manager to write the new block
         // remember to update the table information. i.e. the nt.blockCount and store it.
         //==========================================
+        setInt(block, BLOCKSIZE - 4, BLOCKSIZE);
+
+        Block newBlock;
+        newBlock.filename = block.filename;
+        newBlock.offset = nt.blockCount * BLOCKSIZE;
+        newBlock.status = 0;
+        
+        InputRecord(newBlock, 0, entry, nt);
+        setInt(newBlock, BLOCKSIZE - 4, tupleSize);
+
+        bm.BufferManagerWrite(newBlock);
+
+        nt.blockCount ++;
     }
     else {
         // The block is not full;
@@ -124,9 +137,15 @@ void RecordManager::RecordManagerRecordInsert(std::string dbName, const std::vec
         // YOUR CODE GOES HERE:
         // just input the record and update the endpoint 
         //==========================================
+        InputRecord(block, endPoint, entry, nt);
+        setInt(block, BLOCKSIZE - 4, endPoint + tupleSize);
     }
 
     // update the index information by insert data into index
+    for(auto attr: nt.attributes){
+        std::string indexFileName = nt.name + "." + attr.name;
+        // if index file exists
+    }
 }
 
 void RecordManager::InputRecord(Block & block, int tuplePos, const std::vector<element> & entry, Table & nt)
@@ -180,6 +199,32 @@ void RecordManager::RecordManagerRecordDelete(std::string dbName, long offset, c
     //update index if necessary, to erase the tuple in index
     // HIT: borrow idea from function RecordManager::RecordManagerRecordSelect()
     //==========================================
+    for(tuple = 0; tuple <= endPoint - tupleSize; tuple += tupleSize){
+        if(block.data[tuple] == 'N')
+            continue;
+        startPos = tuple + 1;
+        queryTuple.clear();
+        for(auto attr : nt.attributes){
+            switch(attr.type){
+                case 0:
+                    queryTuple.push_back(element(getInt(block, startPos)));
+                    startPos += sizeof(int);
+                    break;
+                case 1:
+		    queryTuple.push_back(element(getFloat(block, startPos)));
+                    startPos += sizeof(float);
+                    break;
+                case 2:
+                    queryTuple.push_back(element(getString(block, startPos)));
+                    startPos += attr.length;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if(filter.test(queryTuple))
+            block.data[tuple] == 'N';
+    }
 }
 
 std::vector<std::vector<element> > RecordManager::RecordManagerRecordSelect(std::string dbName, long offset, const Filter & filter, Table & nt)

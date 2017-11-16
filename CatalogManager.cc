@@ -40,6 +40,39 @@ Table CatalogManager::loadTable(const std::string &tableName) {
     // HIT: read createTable() function above and table.write() function in file global.cc
     // follow the file structure
     //==========================================
+    assert(fin.is_open());
+
+    std::string line;
+    getline(fin, nt.name);
+    getline(fin, line);
+    nt.entrySize = std::stoi(line);
+    getline(fin, line);
+    int attr_num = std::stoi(line);
+    getline(fin, line);
+    nt.blockCount = std::stoi(line);
+
+    for(size_t i = 0; i < attr_num; i ++){
+        AttrType attr;
+        getline(fin, attr.name);
+        getline(fin, line);
+        attr.type = std::stoi(line);
+        getline(fin, line);
+        attr.length = std::stoi(line);
+        getline(fin, line);
+        attr.unique = std::stoi(line);
+        getline(fin, line);
+        int ind_num = std::stoi(line);
+        for(int j = 0; j < ind_num; j++){
+            getline(fin, line);
+            attr.indices.push_back(line);
+        }
+        getline(fin, line);
+
+        nt.attributes.push_back(attr);
+    }
+
+    fin.close();
+
     return nt;
 }
 
